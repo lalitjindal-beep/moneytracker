@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MoneyTrack">
+<meta name="theme-color" content="#f2f2f7">
+<title>MoneyTrack</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  background: #f2f2f7;
+  color: #1c1c1e;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+:root {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --sep: #e5e5ea;
+  --sep2: #c6c6c8;
+  --label: #1c1c1e;
+  --label2: #3a3a3c;
+  --label3: #636366;
+  --label4: #aeaeb2;
+  --blue: #007aff;
+  --green: #34c759;
+  --red: #ff3b30;
+  --orange: #ff9500;
+  --redbg: #fff1f0;
+  --greenbg: #f0fff4;
+  --orangebg: #fff8ed;
+  --bluebg: #eef4ff;
+  --r: 16px;
+  --st: env(safe-area-inset-top, 44px);
+  --sb: env(safe-area-inset-bottom, 20px);
+}
+
+/* ── APP SHELL ── */
+#app { display:flex; flex-direction:column; height:100dvh; max-width:430px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg); }
+.safe-top { height:var(--st); background:var(--bg); flex-shrink:0; }
+
+/* ── LOCK SCREEN ── */
+#lockScreen {
+  position:fixed; inset:0; z-index:999;
+  background:#f2f2f7;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:40px 32px;
+  padding-top:calc(var(--st) + 40px);
+  padding-bottom:calc(var(--sb) + 40px);
+}
+.lock-icon { font-size:56px; margin-bottom:16px; }
+.lock-title { font-size:26px; font-weight:700; color:var(--label); letter-spacing:-0.5px; margin-bottom:6px; }
+.lock-sub { font-size:15px; color:var(--label3); margin-bottom:36px; text-align:center; line-height:1.5; }
+.lock-input {
+  width:100%; background:white; border:none;
+  border-radius:14px; padding:15px 18px;
+  font-size:18px; font-family:-apple-system,sans-serif;
+  color:var(--label); outline:none; text-align:center;
+  letter-spacing:4px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.08);
+  margin-bottom:14px;
+}
+.lock-input::placeholder { letter-spacing:0; color:var(--label4); font-size:15px; }
+.lock-btn {
+  width:100%; background:var(--blue); color:white;
+  border:none; border-radius:14px; padding:15px;
+  font-size:17px; font-weight:600;
+  font-family:-apple-system,sans-serif; cursor:pointer;
+  transition:opacity 0.15s;
+}
+.lock-btn:active { opacity:0.8; }
+.lock-error { color:var(--red); font-size:14px; margin-top:12px; font-weight:500; min-height:20px; }
+.lock-hint { color:var(--label4); font-size:13px; margin-top:20px; text-align:center; line-height:1.6; }
+.lock-hint b { color:var(--label3); }
+
+/* ── NAV HEADER ── */
+.nav-header {
+  background:rgba(242,242,247,0.92);
+  -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
+  border-bottom:0.5px solid var(--sep2);
+  padding:0 16px 12px;
+  flex-shrink:0; position:relative; z-index:10;
+}
+.nav-top { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; }
+.nav-title { font-size:28px; font-weight:700; letter-spacing:-0.5px; color:var(--label); line-height:1; }
+.nav-subtitle { font-size:13px; color:var(--label3); margin-top:2px; }
+.nav-right { display:flex; gap:8px; align-items:center; }
+.nav-btn {
+  width:32px; height:32px; border:none; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; cursor:pointer; transition:opacity 0.15s; flex-shrink:0;
+}
+.nav-btn:active { opacity:0.6; }
+.btn-add { background:var(--blue); color:white; font-size:22px; padding-bottom:1px; }
+.btn-lock { background:rgba(118,118,128,0.15); color:var(--label3); font-size:15px; }
+.btn-cloud { background:rgba(118,118,128,0.15); color:var(--blue); font-size:16px; }
+
+/* ── CLOUD POPUP MENU ── */
+.cloud-menu-wrap { position:relative; }
+.cloud-popup {
+  display:none;
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  background:white;
+  border-radius:14px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+  min-width:210px;
+  z-index:200;
+  overflow:hidden;
+  animation:popIn 0.18s cubic-bezier(0.32,0.72,0,1);
+}
+.cloud-popup.open { display:block; }
+@keyframes popIn { from { opacity:0; transform:scale(0.92) translateY(-6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.cloud-popup-title {
+  font-size:11px; font-weight:600; color:var(--label4);
+  text-transform:uppercase; letter-spacing:0.5px;
+  padding:10px 14px 6px;
+}
+.cloud-popup-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px;
+  cursor:pointer;
+  transition:background 0.12s;
+  border:none; background:transparent; width:100%;
+  font-family:-apple-system,sans-serif;
+  text-align:left;
+}
+.cloud-popup-item:active { background:rgba(0,0,0,0.05); }
+.cloud-popup-item + .cloud-popup-item { border-top:0.5px solid var(--sep); }
+.cp-icon { font-size:20px; width:28px; text-align:center; flex-shrink:0; }
+.cp-body {}
+.cp-label { font-size:15px; font-weight:500; color:var(--label); }
+.cp-sub { font-size:12px; color:var(--label3); margin-top:1px; }
+/* overlay to close popup on outside tap */
+.cloud-menu-overlay { display:none; position:fixed; inset:0; z-index:199; }
+.cloud-menu-overlay.open { display:block; }
+
+/* ── BACKUP BADGE DOT ── */
+.cloud-badge {
+  position:absolute; top:-2px; right:-2px;
+  width:10px; height:10px;
+  background:var(--red);
+  border-radius:50%;
+  border:2px solid var(--bg);
+  display:none;
+  animation:pulse 2s infinite;
+}
+.cloud-badge.show { display:block; }
+@keyframes pulse {
+  0%,100% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.3); opacity:0.7; }
+}
+
+/* ── REMINDER BANNER ── */
+#backupBanner {
+  display:none;
+  background:#fff8ed;
+  border-bottom:0.5px solid #ffe0a0;
+  padding:10px 16px;
+  flex-shrink:0;
+}
+#backupBanner.show { display:flex; align-items:center; gap:10px; }
+.banner-icon { font-size:20px; flex-shrink:0; }
+.banner-body { flex:1; }
+.banner-title { font-size:13px; font-weight:600; color:#7a4a00; }
+.banner-sub { font-size:12px; color:#a06000; margin-top:1px; }
+.banner-btn {
+  background:#ff9500; color:white; border:none;
+  border-radius:8px; padding:6px 12px;
+  font-size:13px; font-weight:600;
+  cursor:pointer; font-family:-apple-system,sans-serif;
+  flex-shrink:0;
+}
+.banner-btn:active { opacity:0.8; }
+.banner-close {
+  color:#a06000; background:none; border:none;
+  font-size:18px; cursor:pointer; padding:0 0 0 4px;
+  flex-shrink:0; line-height:1;
+}
+
+/* ── LAST BACKUP CHIP in popup ── */
+.cp-lastbackup {
+  font-size:11px; color:var(--label4);
+  padding:6px 14px 8px;
+  border-top:0.5px solid var(--sep);
+  text-align:center;
+}
+
+/* SEGMENT */
+.seg-ctrl { display:flex; background:rgba(118,118,128,0.12); border-radius:9px; padding:2px; }
+.seg-btn { flex:1; padding:6px 4px; border:none; background:transparent; border-radius:7px; font-size:12px; font-weight:500; color:var(--label3); cursor:pointer; white-space:nowrap; font-family:-apple-system,sans-serif; transition:all 0.2s; }
+.seg-btn.active { background:#fff; color:var(--label); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,0.12),0 0.5px 1px rgba(0,0,0,0.08); }
+
+/* ── SCROLL ── */
+.scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 16px calc(var(--sb) + 20px); }
+.scroll-area::-webkit-scrollbar { display:none; }
+
+/* ── VIEWS ── */
+.view { display:none; }
+.view.active { display:block; }
+
+/* ── HERO CARD ── */
+.hero-card { background:var(--blue); border-radius:var(--r); padding:18px 20px; margin-bottom:12px; color:white; }
+.hero-label { font-size:13px; opacity:0.8; margin-bottom:4px; font-weight:500; }
+.hero-amount { font-size:34px; font-weight:700; letter-spacing:-1px; line-height:1; margin-bottom:14px; }
+.hero-pills { display:flex; gap:8px; }
+.hero-pill { flex:1; background:rgba(255,255,255,0.18); border-radius:10px; padding:8px 10px; }
+.hero-pill .hv { font-size:15px; font-weight:700; }
+.hero-pill .hl { font-size:11px; opacity:0.8; margin-top:1px; }
+
+/* ── LIST CARD ── */
+.group { margin-bottom:20px; }
+.group-label { font-size:13px; font-weight:600; color:var(--label3); text-transform:uppercase; letter-spacing:0.4px; padding:0 4px 6px; }
+.list-card { background:var(--card); border-radius:var(--r); overflow:hidden; }
+.list-row { display:flex; align-items:center; padding:12px 16px; min-height:52px; cursor:pointer; position:relative; transition:background 0.12s; gap:12px; -webkit-user-select:none; user-select:none; }
+.list-row:active { background:rgba(0,0,0,0.04); }
+.list-row+.list-row::before { content:''; position:absolute; top:0; left:56px; right:0; height:0.5px; background:var(--sep); }
+.row-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; background:#f2f2f7; }
+.row-body { flex:1; min-width:0; }
+.row-title { font-size:16px; font-weight:500; color:var(--label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-sub { font-size:13px; color:var(--label3); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-right { text-align:right; flex-shrink:0; }
+.row-amount { font-size:16px; font-weight:600; }
+.row-amountsub { font-size:12px; color:var(--label4); margin-top:1px; }
+.chevron { color:var(--label4); font-size:18px; margin-left:2px; flex-shrink:0; }
+
+/* colours */
+.cg { color:var(--green); } .cr { color:var(--red); } .cb { color:var(--blue); } .co { color:var(--orange); } .cm { color:var(--label4); }
+.bg-r { background:var(--redbg); } .bg-g { background:var(--greenbg); } .bg-b { background:var(--bluebg); } .bg-o { background:var(--orangebg); }
+
+/* badge */
+.badge { display:inline-flex; align-items:center; padding:2px 7px; border-radius:20px; font-size:11px; font-weight:600; margin-left:5px; vertical-align:middle; background:var(--orangebg); color:var(--orange); }
+
+/* ── TRANSACTION ROW ── */
+.txn-row { display:flex; align-items:flex-start; padding:12px 16px; gap:12px; position:relative; }
+.txn-row+.txn-row::before { content:''; position:absolute; top:0; left:64px; right:16px; height:0.5px; background:var(--sep); }
+.txn-dot { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; margin-top:1px; }
+.txn-body { flex:1; min-width:0; }
+.txn-title { font-size:15px; font-weight:500; }
+.txn-meta { font-size:13px; color:var(--label3); margin-top:1px; }
+.txn-date { font-size:12px; color:var(--label4); margin-top:2px; }
+.txn-ref { font-size:12px; color:var(--blue); margin-top:2px; }
+.txn-right { text-align:right; flex-shrink:0; }
+.txn-amt { font-size:16px; font-weight:600; }
+.txn-curr { font-size:11px; color:var(--label4); }
+.txn-del { font-size:12px; color:var(--red); background:none; border:none; cursor:pointer; padding:3px 0; margin-top:4px; font-family:-apple-system,sans-serif; display:block; margin-left:auto; }
+
+/* ── DETAIL ── */
+.back-row { display:flex; align-items:center; gap:2px; color:var(--blue); font-size:17px; padding:8px 4px 14px; cursor:pointer; width:fit-content; }
+.back-row:active { opacity:0.6; }
+.detail-hero { background:var(--card); border-radius:var(--r); padding:18px 20px; margin-bottom:12px; }
+.detail-name { font-size:22px; font-weight:700; letter-spacing:-0.4px; }
+.detail-type { font-size:14px; color:var(--label3); margin-top:2px; margin-bottom:14px; }
+.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat-box { background:var(--bg); border-radius:12px; padding:10px 8px; text-align:center; }
+.stat-val { font-size:16px; font-weight:700; }
+.stat-lbl { font-size:11px; color:var(--label3); margin-top:2px; line-height:1.3; }
+.bill-bar { margin-top:12px; background:#f2f2f7; border-radius:6px; height:6px; overflow:hidden; }
+.bill-fill { height:100%; background:var(--green); border-radius:6px; transition:width 0.5s; }
+.bill-note { font-size:13px; color:var(--label3); margin-top:8px; }
+
+/* ── PENDING CARD ── */
+.pending-card { background:var(--card); border-radius:var(--r); padding:14px 16px; margin-bottom:8px; cursor:pointer; }
+.pending-card:active { background:#f5f5f5; }
+.pc-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.pc-name { font-size:16px; font-weight:600; }
+.pc-amt { font-size:16px; font-weight:700; color:var(--orange); }
+.pc-detail { font-size:13px; color:var(--label3); margin-top:4px; }
+.pc-bar { margin-top:10px; background:#f2f2f7; border-radius:4px; height:5px; overflow:hidden; }
+.pc-fill { height:100%; background:var(--green); border-radius:4px; }
+
+/* ── REPORT ── */
+.report-row { display:flex; justify-content:space-between; align-items:center; padding:13px 16px; gap:10px; }
+.report-row+.report-row { border-top:0.5px solid var(--sep); }
+.rr-l { font-size:15px; color:var(--label); }
+.rr-v { font-size:15px; font-weight:600; }
+.report-total { padding:13px 16px; background:var(--bluebg); border-radius:12px; display:flex; justify-content:space-between; margin-top:8px; }
+.rt-l { font-size:15px; font-weight:600; color:var(--blue); }
+.rt-v { font-size:17px; font-weight:700; color:var(--blue); }
+
+/* ── SEARCH ── */
+.ios-search { display:flex; align-items:center; background:rgba(118,118,128,0.12); border-radius:10px; padding:7px 12px; gap:7px; margin-bottom:14px; }
+.ios-search input { flex:1; border:none; background:transparent; font-size:15px; color:var(--label); font-family:-apple-system,sans-serif; outline:none; }
+.ios-search input::placeholder { color:var(--label4); }
+
+/* ── SETTINGS / BACKUP ── */
+.settings-section { margin-bottom:20px; }
+.settings-section .sec-title { font-size:13px; font-weight:600; color:var(--label3); text-transform:uppercase; letter-spacing:0.4px; padding:0 4px 6px; }
+.set-row { display:flex; align-items:center; padding:14px 16px; gap:14px; cursor:pointer; position:relative; }
+.set-row:active { background:rgba(0,0,0,0.04); }
+.set-row+.set-row::before { content:''; position:absolute; top:0; left:54px; right:0; height:0.5px; background:var(--sep); }
+.set-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.set-body { flex:1; }
+.set-label { font-size:16px; font-weight:500; color:var(--label); }
+.set-sub { font-size:13px; color:var(--label3); margin-top:1px; }
+.set-action { color:var(--label4); font-size:18px; }
+
+/* ── EMPTY ── */
+.empty-state { text-align:center; padding:48px 24px 24px; }
+.empty-icon { font-size:48px; margin-bottom:12px; opacity:0.4; }
+.empty-title { font-size:18px; font-weight:600; color:var(--label2); margin-bottom:6px; }
+.empty-sub { font-size:14px; color:var(--label3); line-height:1.5; }
+
+/* ── ADD PARTY ROW ── */
+.add-party-row { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; }
+.add-party-row:active { background:rgba(0,0,0,0.04); }
+.add-party-icon { width:36px; height:36px; background:var(--blue); border-radius:9px; display:flex; align-items:center; justify-content:center; color:white; font-size:20px; }
+.add-party-label { font-size:16px; font-weight:500; color:var(--blue); }
+
+/* ── SHEET ── */
+.sheet-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:500; align-items:flex-end; justify-content:center; -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+.sheet-overlay.open { display:flex; }
+.sheet { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:430px; max-height:92dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; animation:shUp 0.32s cubic-bezier(0.32,0.72,0,1); padding-bottom:calc(var(--sb) + 8px); }
+.sheet::-webkit-scrollbar { display:none; }
+@keyframes shUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.sheet-handle { width:36px; height:4px; background:var(--sep2); border-radius:2px; margin:10px auto 0; }
+.sheet-hdr { display:flex; align-items:center; justify-content:space-between; padding:14px 20px 4px; }
+.sheet-title { font-size:18px; font-weight:700; color:var(--label); }
+.sheet-close { width:28px; height:28px; background:rgba(118,118,128,0.12); border:none; border-radius:50%; color:var(--label3); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:-apple-system,sans-serif; }
+
+/* FORM */
+.fs { padding:12px 20px 0; }
+.fl { font-size:13px; font-weight:600; color:var(--label3); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:7px; }
+.fi { width:100%; background:rgba(118,118,128,0.08); border:none; border-radius:10px; padding:12px 14px; font-size:16px; color:var(--label); font-family:-apple-system,sans-serif; outline:none; -webkit-appearance:none; appearance:none; }
+.fi:focus { background:rgba(0,122,255,0.08); }
+.fi::placeholder { color:var(--label4); }
+textarea.fi { resize:none; line-height:1.5; }
+
+/* TYPE PICKER */
+.type-pick { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.type-opt { border:1.5px solid var(--sep); border-radius:12px; padding:11px 12px; background:transparent; cursor:pointer; text-align:left; font-family:-apple-system,sans-serif; transition:all 0.18s; }
+.type-opt:active { transform:scale(0.97); }
+.to-icon { font-size:20px; margin-bottom:4px; }
+.to-label { font-size:13px; font-weight:600; color:var(--label2); }
+.to-sub { font-size:11px; color:var(--label4); margin-top:1px; }
+.type-opt.ag { border-color:var(--red); background:var(--redbg); }
+.type-opt.ar { border-color:var(--green); background:var(--greenbg); }
+.type-opt.as { border-color:var(--orange); background:var(--orangebg); }
+.type-opt.ab { border-color:var(--blue); background:var(--bluebg); }
+
+/* PARTY TYPE */
+.ptype-pick { display:flex; gap:6px; flex-wrap:wrap; }
+.ptype-chip { padding:7px 14px; border-radius:20px; border:1.5px solid var(--sep); background:transparent; font-size:14px; color:var(--label3); font-weight:500; cursor:pointer; font-family:-apple-system,sans-serif; transition:all 0.15s; }
+.ptype-chip.active { background:var(--blue); color:white; border-color:var(--blue); }
+
+/* SAVE BTN */
+.save-btn { margin:18px 20px 4px; width:calc(100% - 40px); background:var(--blue); color:white; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:600; cursor:pointer; font-family:-apple-system,sans-serif; }
+.save-btn:active { opacity:0.8; }
+
+/* ACTION BTN */
+.action-btn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:-apple-system,sans-serif; transition:opacity 0.15s; }
+.action-btn:active { opacity:0.75; }
+.btn-blue { background:var(--blue); color:white; }
+.btn-green { background:var(--green); color:white; }
+.btn-red { background:var(--redbg); color:var(--red); }
+.btn-grey { background:rgba(118,118,128,0.12); color:var(--label2); }
+
+/* toast */
+#toast { position:fixed; bottom:calc(var(--sb) + 80px); left:50%; transform:translateX(-50%) translateY(20px); background:#1c1c1e; color:white; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; pointer-events:none; z-index:9999; white-space:nowrap; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* change password form */
+.chpw-wrap { padding:16px 20px; }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title">MoneyTrack</div>
+  <div class="lock-sub">Your private money ledger.<br>Enter your PIN to continue.</div>
+  <input class="lock-input" type="password" inputmode="numeric" maxlength="6" id="pinInput" placeholder="Enter PIN" autocomplete="off">
+  <button class="lock-btn" onclick="tryUnlock()">Unlock</button>
+  <div class="lock-error" id="pinError"></div>
+  <div class="lock-hint" id="lockHint">First time? Default PIN is <b>1234</b><br>Change it in Settings after logging in.</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div class="safe-top"></div>
+
+  <!-- HEADER -->
+  <div class="nav-header" id="navHeader">
+    <div class="nav-top">
+      <div>
+        <div class="nav-title" id="navTitle">MoneyTrack</div>
+        <div class="nav-subtitle" id="navSub">Loading…</div>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn btn-add" onclick="openAddEntry()" id="navAddBtn" title="Add Entry">+</button>
+        <!-- iCloud menu -->
+        <div class="cloud-menu-wrap">
+          <button class="nav-btn btn-cloud" onclick="toggleCloudMenu(event)" title="Backup / Restore" id="cloudBtn">
+            ☁️<span class="cloud-badge" id="cloudBadge"></span>
+          </button>
+          <div class="cloud-popup" id="cloudPopup">
+            <div class="cloud-popup-title">iCloud Backup</div>
+            <button class="cloud-popup-item" onclick="backupData();closeCloudMenu()">
+              <span class="cp-icon">⬆️</span>
+              <div class="cp-body">
+                <div class="cp-label">Export Backup</div>
+                <div class="cp-sub">Save to iCloud Drive / Files</div>
+              </div>
+            </button>
+            <button class="cloud-popup-item" onclick="closeCloudMenu();document.getElementById('fileInput').click()">
+              <span class="cp-icon">⬇️</span>
+              <div class="cp-body">
+                <div class="cp-label">Import Backup</div>
+                <div class="cp-sub">Restore from saved JSON file</div>
+              </div>
+            </button>
+            <div class="cp-lastbackup" id="popupLastBackup">Last backup: Never</div>
+          </div>
+        </div>
+        <button class="nav-btn btn-lock" onclick="lockApp()" title="Lock">🔒</button>
+      </div>
+    </div>
+    <div class="seg-ctrl" id="segCtrl">
+      <button class="seg-btn active" onclick="switchTab(0)">Parties</button>
+      <button class="seg-btn" onclick="switchTab(1)">All</button>
+      <button class="seg-btn" onclick="switchTab(2)">Pending</button>
+      <button class="seg-btn" onclick="switchTab(3)">Report</button>
+      <button class="seg-btn" onclick="switchTab(4)">⚙️</button>
+    </div>
+  </div>
+
+  <!-- BACKUP REMINDER BANNER -->
+  <div id="backupBanner">
+    <div class="banner-icon">⚠️</div>
+    <div class="banner-body">
+      <div class="banner-title">Backup Overdue</div>
+      <div class="banner-sub" id="bannerSub">Your last backup was over 24 hours ago</div>
+    </div>
+    <button class="banner-btn" onclick="backupData()">Save Now</button>
+    <button class="banner-close" onclick="dismissBanner()">×</button>
+  </div>
+
+  <div class="scroll-area" id="scrollArea">
+    <div class="view active" id="view-0"><div id="c0"></div></div>
+    <div class="view" id="view-1"><div id="c1"></div></div>
+    <div class="view" id="view-2"><div id="c2"></div></div>
+    <div class="view" id="view-3"><div id="c3"></div></div>
+    <div class="view" id="view-4"><div id="c4"></div></div>
+    <div class="view" id="view-5"><div id="c5"></div></div><!-- detail -->
+  </div>
+</div>
+
+<!-- SHEET: ADD ENTRY -->
+<div class="sheet-overlay" id="sheetEntry">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">New Entry</div>
+      <button class="sheet-close" onclick="closeSheet('sheetEntry')">✕</button>
+    </div>
+    <div class="fs">
+      <div class="fl">What happened?</div>
+      <div class="type-pick">
+        <button class="type-opt ag" id="topt-gave" onclick="selType('gave')"><div class="to-icon">💸</div><div class="to-label">I Gave</div><div class="to-sub">Money lent / given</div></button>
+        <button class="type-opt" id="topt-received" onclick="selType('received')"><div class="to-icon">💰</div><div class="to-label">I Received</div><div class="to-sub">Money returned to me</div></button>
+        <button class="type-opt" id="topt-submitted" onclick="selType('submitted')"><div class="to-icon">📄</div><div class="to-label">Bill Submitted</div><div class="to-sub">Reimbursement filed</div></button>
+        <button class="type-opt" id="topt-reimbursed" onclick="selType('reimbursed')"><div class="to-icon">✅</div><div class="to-label">Reimbursed</div><div class="to-sub">Amount paid back</div></button>
+      </div>
+    </div>
+    <div class="fs" style="margin-top:14px">
+      <div class="fl">Party / Company</div>
+      <select class="fi" id="entryParty"></select>
+    </div>
+    <div class="fs" style="margin-top:12px;display:flex;gap:10px">
+      <div style="flex:1"><div class="fl">Amount</div><input class="fi" type="number" inputmode="decimal" id="entryAmt" placeholder="0.00" min="0" step="0.01"></div>
+      <div style="width:100px"><div class="fl">Currency</div>
+        <select class="fi" id="entryCurr"><option value="INR">₹ INR</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="AED">AED</option></select>
+      </div>
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">Description</div>
+      <textarea class="fi" id="entryNote" rows="2" placeholder="e.g. Travel bills — Delhi trip"></textarea>
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">Date</div>
+      <input class="fi" type="date" id="entryDate">
+    </div>
+    <div class="fs" style="margin-top:12px" id="refSection">
+      <div class="fl">Bill / Reference No.</div>
+      <input class="fi" type="text" id="entryRef" placeholder="e.g. BILL-2025-042">
+    </div>
+    <button class="save-btn" onclick="saveEntry()">Save Entry</button>
+  </div>
+</div>
+
+<!-- SHEET: ADD PARTY -->
+<div class="sheet-overlay" id="sheetParty">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">Add Party</div>
+      <button class="sheet-close" onclick="closeSheet('sheetParty')">✕</button>
+    </div>
+    <div class="fs" style="margin-top:4px">
+      <div class="fl">Name</div>
+      <input class="fi" type="text" id="partyName" placeholder="Friend, relative, or company name">
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">Category</div>
+      <div class="ptype-pick">
+        <button class="ptype-chip active" id="pc-Friend" onclick="selPType('Friend')">Friend</button>
+        <button class="ptype-chip" id="pc-Relative" onclick="selPType('Relative')">Relative</button>
+        <button class="ptype-chip" id="pc-Company" onclick="selPType('Company')">Company</button>
+        <button class="ptype-chip" id="pc-Colleague" onclick="selPType('Colleague')">Colleague</button>
+        <button class="ptype-chip" id="pc-Client" onclick="selPType('Client')">Client</button>
+        <button class="ptype-chip" id="pc-Other" onclick="selPType('Other')">Other</button>
+      </div>
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">Note (optional)</div>
+      <input class="fi" type="text" id="partyNote" placeholder="e.g. Office colleague, Mumbai">
+    </div>
+    <button class="save-btn" onclick="saveParty()">Add Party</button>
+  </div>
+</div>
+
+<!-- SHEET: CHANGE PIN -->
+<div class="sheet-overlay" id="sheetPin">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">Change PIN</div>
+      <button class="sheet-close" onclick="closeSheet('sheetPin')">✕</button>
+    </div>
+    <div class="fs" style="margin-top:8px">
+      <div class="fl">Current PIN</div>
+      <input class="fi" type="password" inputmode="numeric" maxlength="6" id="curPin" placeholder="Enter current PIN">
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">New PIN</div>
+      <input class="fi" type="password" inputmode="numeric" maxlength="6" id="newPin" placeholder="4–6 digits">
+    </div>
+    <div class="fs" style="margin-top:12px">
+      <div class="fl">Confirm New PIN</div>
+      <input class="fi" type="password" inputmode="numeric" maxlength="6" id="conPin" placeholder="Repeat new PIN">
+    </div>
+    <div style="padding:8px 20px 0;color:var(--red);font-size:14px;min-height:20px" id="pinChgErr"></div>
+    <button class="save-btn" onclick="changePin()">Update PIN</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="cloud-menu-overlay" id="cloudOverlay" onclick="closeCloudMenu()"></div>
+
+<!-- HIDDEN FILE INPUT FOR RESTORE -->
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="restoreData(event)">
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+const STORE_KEY = 'mt3_data';
+const PIN_KEY   = 'mt3_pin';
+let S = { parties:[], entries:[] };
+let unlocked = false;
+
+function loadData() {
+  try { const d=localStorage.getItem(STORE_KEY); if(d) S=JSON.parse(d); } catch(e){}
+  if(!Array.isArray(S.parties)) S.parties=[];
+  if(!Array.isArray(S.entries)) S.entries=[];
+}
+function saveData() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+function getPin() { return localStorage.getItem(PIN_KEY)||'1234'; }
+function setPin(p) { localStorage.setItem(PIN_KEY, p); }
+
+// ── LOCK ─────────────────────────────────────────────────────
+function tryUnlock() {
+  const v = document.getElementById('pinInput').value.trim();
+  if (v === getPin()) {
+    unlocked = true;
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('lockHint').style.display = 'none';
+    renderTab(0); updateSub();
+    startReminderTimer();
+  } else {
+    document.getElementById('pinError').textContent = 'Incorrect PIN. Try again.';
+    document.getElementById('pinInput').value = '';
+    setTimeout(()=>document.getElementById('pinError').textContent='', 2500);
+  }
+}
+document.getElementById('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+
+function lockApp() {
+  unlocked = false;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('lockHint').style.display = '';
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function changePin() {
+  const cur=document.getElementById('curPin').value.trim();
+  const nw=document.getElementById('newPin').value.trim();
+  const cn=document.getElementById('conPin').value.trim();
+  const err=document.getElementById('pinChgErr');
+  if(cur!==getPin()){err.textContent='Current PIN is wrong.';return;}
+  if(nw.length<4){err.textContent='New PIN must be at least 4 digits.';return;}
+  if(nw!==cn){err.textContent='PINs do not match.';return;}
+  setPin(nw); closeSheet('sheetPin');
+  ['curPin','newPin','conPin'].forEach(id=>document.getElementById(id).value='');
+  err.textContent='';
+  toast('✅ PIN updated successfully');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const esc = s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtN = n=>Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});
+const today = ()=>new Date().toISOString().split('T')[0];
+function fmtDate(d){if(!d)return'';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+
+function getBalance(pid){
+  let b=0;
+  S.entries.filter(e=>e.pid===pid).forEach(e=>{
+    if(e.type==='gave') b+=e.amt;
+    if(e.type==='received') b-=e.amt;
+    if(e.type==='submitted') b+=e.amt;
+    if(e.type==='reimbursed') b-=e.amt;
+  });
+  return b;
+}
+function pendReim(pid){
+  const s=S.entries.filter(e=>e.pid===pid&&e.type==='submitted').reduce((a,e)=>a+e.amt,0);
+  const r=S.entries.filter(e=>e.pid===pid&&e.type==='reimbursed').reduce((a,e)=>a+e.amt,0);
+  return Math.max(0,s-r);
+}
+const TC={
+  gave:      {icon:'💸',label:'I Gave',      bg:'bg-r',c:'cr',sign:'-'},
+  received:  {icon:'💰',label:'Received',    bg:'bg-g',c:'cg',sign:'+'},
+  submitted: {icon:'📄',label:'Bill Filed',  bg:'bg-o',c:'co',sign:'-'},
+  reimbursed:{icon:'✅',label:'Reimbursed',  bg:'bg-b',c:'cb',sign:'+'},
+};
+const CI={Friend:'👤',Relative:'👨‍👩‍👧',Company:'🏢',Colleague:'💼',Client:'🤝',Other:'📌'};
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── TAB MANAGEMENT ────────────────────────────────────────────
+let activeTab=0, detailPid=null;
+
+function switchTab(i){
+  activeTab=i;
+  document.querySelectorAll('.seg-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  [0,1,2,3,4,5].forEach(j=>document.getElementById('view-'+j).classList.toggle('active',j===i));
+  const titles=['MoneyTrack','All Entries','Pending','Report','Settings'];
+  document.getElementById('navTitle').textContent=titles[i]||'MoneyTrack';
+  document.getElementById('navAddBtn').style.display=i===4?'none':'flex';
+  document.getElementById('segCtrl').style.display='';
+  renderTab(i);
+  document.getElementById('scrollArea').scrollTop=0;
+}
+
+function renderTab(i){
+  if(i===0)renderParties();
+  if(i===1)renderAll();
+  if(i===2)renderPending();
+  if(i===3)renderReport();
+  if(i===4)renderSettings();
+  updateSub();
+}
+
+function openDetail(pid){
+  detailPid=pid;
+  const p=S.parties.find(x=>x.id===pid);
+  document.getElementById('navTitle').textContent=p?p.name:'Detail';
+  document.getElementById('segCtrl').style.display='none';
+  document.getElementById('navAddBtn').style.display='none';
+  [0,1,2,3,4].forEach(i=>document.getElementById('view-'+i).classList.remove('active'));
+  document.getElementById('view-5').classList.add('active');
+  renderDetail(pid);
+  document.getElementById('scrollArea').scrollTop=0;
+}
+
+function closeDetail(){
+  detailPid=null;
+  document.getElementById('segCtrl').style.display='';
+  switchTab(activeTab===5?0:activeTab);
+}
+
+function updateSub(){
+  const pend=S.parties.reduce((s,p)=>s+pendReim(p.id),0);
+  const loans=S.entries.filter(e=>e.type==='gave').reduce((s,e)=>s+e.amt,0)-S.entries.filter(e=>e.type==='received').reduce((s,e)=>s+e.amt,0);
+  const tot=Math.max(0,pend)+Math.max(0,loans);
+  document.getElementById('navSub').textContent=
+    tot>0?`₹${fmtN(tot)} outstanding · ${S.parties.length} parties`
+         :`${S.parties.length} parties · ${S.entries.length} entries`;
+}
+
+// ── PARTIES ───────────────────────────────────────────────────
+function renderParties(){
+  const gv=S.entries.filter(e=>e.type==='gave').reduce((s,e)=>s+e.amt,0);
+  const rv=S.entries.filter(e=>e.type==='received').reduce((s,e)=>s+e.amt,0);
+  const sb=S.entries.filter(e=>e.type==='submitted').reduce((s,e)=>s+e.amt,0);
+  const rb=S.entries.filter(e=>e.type==='reimbursed').reduce((s,e)=>s+e.amt,0);
+  const pendB=sb-rb, pendL=gv-rv;
+
+  let h='';
+  if(S.entries.length>0){
+    h+=`<div class="hero-card">
+      <div class="hero-label">Total Outstanding</div>
+      <div class="hero-amount">₹${fmtN(Math.max(0,pendB)+Math.max(0,pendL))}</div>
+      <div class="hero-pills">
+        <div class="hero-pill"><div class="hv">₹${fmtN(Math.max(0,pendB))}</div><div class="hl">Bills Pending</div></div>
+        <div class="hero-pill"><div class="hv">₹${fmtN(Math.max(0,pendL))}</div><div class="hl">Loans Out</div></div>
+        <div class="hero-pill"><div class="hv">${S.parties.length}</div><div class="hl">Parties</div></div>
+      </div>
+    </div>`;
+  }
+  if(!S.parties.length){
+    h+=`<div class="list-card"><div class="add-party-row" onclick="openAddParty()"><div class="add-party-icon">+</div><div class="add-party-label">Add First Party</div></div></div>
+    <div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No parties yet</div><div class="empty-sub">Add friends, relatives, or companies you exchange money with.</div></div>`;
+  } else {
+    h+=`<div class="group"><div class="list-card">`;
+    S.parties.forEach(p=>{
+      const bal=getBalance(p.id), pend=pendReim(p.id);
+      const bc=bal===0?'cm':bal>0?'cg':'cr';
+      const bl=bal===0?'Settled':bal>0?'Owed to you':'You owe';
+      h+=`<div class="list-row" onclick="openDetail('${p.id}')">
+        <div class="row-icon">${CI[p.type]||'📌'}</div>
+        <div class="row-body">
+          <div class="row-title">${esc(p.name)}${pend>0?`<span class="badge">₹${fmtN(pend)} pending</span>`:''}</div>
+          <div class="row-sub">${esc(p.type)}${p.note?' · '+esc(p.note):''}</div>
+        </div>
+        <div class="row-right">
+          <div class="row-amount ${bc}">${bal===0?'—':'₹'+fmtN(Math.abs(bal))}</div>
+          <div class="row-amountsub">${bl}</div>
+        </div>
+        <div class="chevron">›</div>
+      </div>`;
+    });
+    h+=`</div></div>
+    <div class="list-card"><div class="add-party-row" onclick="openAddParty()"><div class="add-party-icon">+</div><div class="add-party-label">Add New Party</div></div></div>`;
+  }
+  document.getElementById('c0').innerHTML=h;
+}
+
+// ── ALL ENTRIES ───────────────────────────────────────────────
+let allQ='';
+function renderAll(){
+  const q=allQ.toLowerCase();
+  let entries=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date));
+  if(q) entries=entries.filter(e=>{
+    const p=S.parties.find(x=>x.id===e.pid);
+    return (p&&p.name.toLowerCase().includes(q))||(e.note||'').toLowerCase().includes(q)||(e.ref||'').toLowerCase().includes(q);
+  });
+  let h=`<div class="ios-search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search entries…" value="${esc(allQ)}" oninput="allQ=this.value;renderAll()">
+  </div>`;
+  if(!entries.length){
+    h+=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">${q?'No results':'No entries yet'}</div><div class="empty-sub">Tap + to record your first entry.</div></div>`;
+  } else {
+    h+=`<div class="list-card">`+entries.map(e=>txnRow(e,true)).join('')+`</div>`;
+  }
+  document.getElementById('c1').innerHTML=h;
+}
+
+function txnRow(e,showParty=false){
+  const tc=TC[e.type]||TC.gave;
+  const p=S.parties.find(x=>x.id===e.pid);
+  return `<div class="txn-row">
+    <div class="txn-dot ${tc.bg}">${tc.icon}</div>
+    <div class="txn-body">
+      <div class="txn-title ${tc.c}">${tc.label}</div>
+      ${showParty&&p?`<div class="txn-meta">👤 ${esc(p.name)}</div>`:''}
+      ${e.note?`<div class="txn-meta">${esc(e.note)}</div>`:''}
+      ${e.ref?`<div class="txn-ref">📎 ${esc(e.ref)}</div>`:''}
+      <div class="txn-date">📅 ${fmtDate(e.date)}</div>
+    </div>
+    <div class="txn-right">
+      <div class="txn-amt ${tc.c}">${tc.sign}${e.curr==='INR'?'₹':''}${fmtN(e.amt)}</div>
+      <div class="txn-curr">${e.curr}</div>
+      <button class="txn-del" onclick="delEntry('${e.id}',event)">Delete</button>
+    </div>
+  </div>`;
+}
+
+// ── PENDING ───────────────────────────────────────────────────
+function renderPending(){
+  const bp=S.parties.map(p=>{
+    const s=S.entries.filter(e=>e.pid===p.id&&e.type==='submitted').reduce((a,e)=>a+e.amt,0);
+    const r=S.entries.filter(e=>e.pid===p.id&&e.type==='reimbursed').reduce((a,e)=>a+e.amt,0);
+    return{p,s,r,pend:s-r};
+  }).filter(x=>x.pend>0).sort((a,b)=>b.pend-a.pend);
+
+  const lp=S.parties.map(p=>{
+    const g=S.entries.filter(e=>e.pid===p.id&&e.type==='gave').reduce((a,e)=>a+e.amt,0);
+    const r=S.entries.filter(e=>e.pid===p.id&&e.type==='received').reduce((a,e)=>a+e.amt,0);
+    return{p,g,r,bal:g-r};
+  }).filter(x=>x.bal>0).sort((a,b)=>b.bal-a.bal);
+
+  let h='';
+  if(!bp.length&&!lp.length){
+    h=`<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All clear!</div><div class="empty-sub">No pending bills or outstanding loans.</div></div>`;
+  } else {
+    if(bp.length){
+      h+=`<div class="group"><div class="group-label">Pending Reimbursements</div>`;
+      bp.forEach(x=>{
+        const pct=x.s>0?Math.min(100,Math.round(x.r/x.s*100)):0;
+        h+=`<div class="pending-card" onclick="openDetail('${x.p.id}')">
+          <div class="pc-top"><div class="pc-name">${esc(x.p.name)}</div><div class="pc-amt">₹${fmtN(x.pend)} due</div></div>
+          <div class="pc-detail">Submitted ₹${fmtN(x.s)} · Reimbursed ₹${fmtN(x.r)}</div>
+          <div class="pc-bar"><div class="pc-fill" style="width:${pct}%"></div></div>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+    if(lp.length){
+      h+=`<div class="group"><div class="group-label">Loans Outstanding</div>`;
+      lp.forEach(x=>{
+        h+=`<div class="pending-card" onclick="openDetail('${x.p.id}')">
+          <div class="pc-top"><div class="pc-name">${esc(x.p.name)}</div><div class="pc-amt" style="color:var(--green)">₹${fmtN(x.bal)} pending</div></div>
+          <div class="pc-detail">Gave ₹${fmtN(x.g)} · Received back ₹${fmtN(x.r)}</div>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+  document.getElementById('c2').innerHTML=h;
+}
+
+// ── REPORT ────────────────────────────────────────────────────
+function renderReport(){
+  const gv=S.entries.filter(e=>e.type==='gave').reduce((s,e)=>s+e.amt,0);
+  const rv=S.entries.filter(e=>e.type==='received').reduce((s,e)=>s+e.amt,0);
+  const sb=S.entries.filter(e=>e.type==='submitted').reduce((s,e)=>s+e.amt,0);
+  const rb=S.entries.filter(e=>e.type==='reimbursed').reduce((s,e)=>s+e.amt,0);
+  const net=(gv-rv)+(sb-rb);
+  let h=`<div class="group"><div class="group-label">Overall Summary</div>
+    <div class="list-card">
+      <div class="report-row"><span class="rr-l">💸 Total Given</span><span class="rr-v cr">₹${fmtN(gv)}</span></div>
+      <div class="report-row"><span class="rr-l">💰 Received Back</span><span class="rr-v cg">₹${fmtN(rv)}</span></div>
+      <div class="report-row"><span class="rr-l">📄 Bills Submitted</span><span class="rr-v co">₹${fmtN(sb)}</span></div>
+      <div class="report-row"><span class="rr-l">✅ Reimbursed</span><span class="rr-v cg">₹${fmtN(rb)}</span></div>
+    </div>
+    <div class="report-total"><span class="rt-l">Net Pending</span><span class="rt-v">₹${fmtN(Math.max(0,net))}</span></div>
+  </div>`;
+  if(S.parties.length){
+    h+=`<div class="group"><div class="group-label">Party-wise Balance</div><div class="list-card">`;
+    S.parties.map(p=>({p,bal:getBalance(p.id)})).sort((a,b)=>Math.abs(b.bal)-Math.abs(a.bal)).forEach(({p,bal})=>{
+      const c=bal>0?'cg':bal<0?'cr':'cm';
+      const l=bal>0?'↑ Owed to you':bal<0?'↓ You owe':'Settled';
+      h+=`<div class="list-row" onclick="openDetail('${p.id}')">
+        <div class="row-icon">${CI[p.type]||'📌'}</div>
+        <div class="row-body"><div class="row-title">${esc(p.name)}</div><div class="row-sub">${p.type}</div></div>
+        <div class="row-right"><div class="row-amount ${c}">₹${fmtN(Math.abs(bal))}</div><div class="row-amountsub">${l}</div></div>
+        <div class="chevron">›</div>
+      </div>`;
+    });
+    h+=`</div></div>`;
+  }
+  document.getElementById('c3').innerHTML=h;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────
+function renderDetail(pid){
+  const p=S.parties.find(x=>x.id===pid); if(!p)return;
+  const entries=S.entries.filter(e=>e.pid===pid).sort((a,b)=>b.date.localeCompare(a.date));
+  const gv=entries.filter(e=>e.type==='gave').reduce((s,e)=>s+e.amt,0);
+  const rv=entries.filter(e=>e.type==='received').reduce((s,e)=>s+e.amt,0);
+  const sb=entries.filter(e=>e.type==='submitted').reduce((s,e)=>s+e.amt,0);
+  const rb=entries.filter(e=>e.type==='reimbursed').reduce((s,e)=>s+e.amt,0);
+  const bal=getBalance(pid);
+  const bc=bal>0?'cg':bal<0?'cr':'cm';
+  const bl=bal>0?'Owed to You':bal<0?'You Owe':'All Settled';
+  const pct=sb>0?Math.min(100,Math.round(rb/sb*100)):0;
+
+  let h=`<div class="back-row" onclick="closeDetail()"><span style="font-size:22px">‹</span> Back</div>
+  <div class="detail-hero">
+    <div class="detail-type">${CI[p.type]||'📌'} ${esc(p.type)}${p.note?' · '+esc(p.note):''}</div>
+    <div class="detail-name">${esc(p.name)}</div>
+    <div class="stat-grid" style="margin-top:14px">
+      <div class="stat-box"><div class="stat-val cr">₹${fmtN(gv+sb)}</div><div class="stat-lbl">Given / Submitted</div></div>
+      <div class="stat-box"><div class="stat-val cg">₹${fmtN(rv+rb)}</div><div class="stat-lbl">Received / Reimbursed</div></div>
+      <div class="stat-box"><div class="stat-val ${bc}">₹${fmtN(Math.abs(bal))}</div><div class="stat-lbl">${bl}</div></div>
+    </div>
+    ${sb>0?`<div class="bill-bar" style="margin-top:14px"><div class="bill-fill" style="width:${pct}%"></div></div>
+    <div class="bill-note">Bills: ₹${fmtN(sb)} submitted · ₹${fmtN(rb)} reimbursed · <b style="color:var(--orange)">₹${fmtN(Math.max(0,sb-rb))} pending</b></div>`:''}
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button onclick="openAddEntry('${pid}')" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">+ Add Entry</button>
+    <button onclick="delParty('${pid}')" style="background:var(--redbg);color:var(--red);border:none;border-radius:12px;padding:12px 16px;font-size:15px;cursor:pointer;font-family:-apple-system,sans-serif">🗑</button>
+  </div>`;
+  if(!entries.length){
+    h+=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No entries</div><div class="empty-sub">Tap "Add Entry" to start recording.</div></div>`;
+  } else {
+    h+=`<div class="list-card">`+entries.map(e=>txnRow(e,false)).join('')+`</div>`;
+  }
+  document.getElementById('c5').innerHTML=h;
+}
+
+function delParty(pid){
+  const cnt=S.entries.filter(e=>e.pid===pid).length;
+  if(!confirm(`Delete this party${cnt>0?' and all '+cnt+' entries':''}?`))return;
+  S.parties=S.parties.filter(p=>p.id!==pid);
+  S.entries=S.entries.filter(e=>e.pid!==pid);
+  saveData(); closeDetail(); renderParties(); updateSub();
+}
+function delEntry(id,ev){
+  ev&&ev.stopPropagation();
+  if(!confirm('Delete this entry?'))return;
+  S.entries=S.entries.filter(e=>e.id!==id);
+  saveData();
+  if(detailPid)renderDetail(detailPid); else renderAll();
+  renderParties(); updateSub();
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+function renderSettings(){
+  const lastBackup=localStorage.getItem('mt3_lastbackup');
+  const h=`
+  <div class="settings-section">
+    <div class="sec-title">iCloud Backup</div>
+    <div class="list-card">
+      <div class="set-row" onclick="backupData()">
+        <div class="set-icon" style="background:#e8f4ff">☁️</div>
+        <div class="set-body">
+          <div class="set-label">Save Backup to iCloud</div>
+          <div class="set-sub">${lastBackup?'Last backup: '+lastBackup:'Saves a JSON file — store in iCloud Drive'}</div>
+        </div>
+        <div class="set-action">›</div>
+      </div>
+      <div class="set-row" onclick="document.getElementById('fileInput').click()">
+        <div class="set-icon" style="background:#e8ffe8">📂</div>
+        <div class="set-body">
+          <div class="set-label">Restore from Backup</div>
+          <div class="set-sub">Pick a saved JSON file to restore all data</div>
+        </div>
+        <div class="set-action">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="sec-title">Security</div>
+    <div class="list-card">
+      <div class="set-row" onclick="openSheet('sheetPin')">
+        <div class="set-icon" style="background:#fff0e8">🔐</div>
+        <div class="set-body">
+          <div class="set-label">Change PIN</div>
+          <div class="set-sub">Update your app unlock PIN</div>
+        </div>
+        <div class="set-action">›</div>
+      </div>
+      <div class="set-row" onclick="lockApp()">
+        <div class="set-icon" style="background:#f0f0f5">🔒</div>
+        <div class="set-body">
+          <div class="set-label">Lock App Now</div>
+          <div class="set-sub">Requires PIN to reopen</div>
+        </div>
+        <div class="set-action">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="sec-title">How to use iCloud Backup</div>
+    <div class="list-card" style="padding:14px 16px">
+      <p style="font-size:14px;color:#636366;line-height:1.8">
+        1️⃣ Tap <b style="color:#1c1c1e">Save Backup to iCloud</b> — a file downloads<br>
+        2️⃣ When prompted, tap <b style="color:#1c1c1e">Save to Files</b> → choose <b style="color:#007aff">iCloud Drive</b><br>
+        3️⃣ To restore: tap <b style="color:#1c1c1e">Restore from Backup</b> → pick the file from iCloud Drive<br>
+        4️⃣ Do a backup <b style="color:#1c1c1e">once a week</b> — your data is safe forever
+      </p>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="sec-title">Danger Zone</div>
+    <div class="list-card">
+      <div class="set-row" onclick="clearAllData()" style="color:var(--red)">
+        <div class="set-icon" style="background:var(--redbg)">🗑️</div>
+        <div class="set-body">
+          <div class="set-label" style="color:var(--red)">Clear All Data</div>
+          <div class="set-sub">Permanently delete all entries and parties</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0 10px;color:var(--label4);font-size:13px">
+    MoneyTrack · Your data stays on your device
+  </div>`;
+  document.getElementById('c4').innerHTML=h;
+}
+
+// ── CLOUD MENU ────────────────────────────────────────────────
+function toggleCloudMenu(ev){
+  ev.stopPropagation();
+  const popup=document.getElementById('cloudPopup');
+  const overlay=document.getElementById('cloudOverlay');
+  const isOpen=popup.classList.contains('open');
+  if(isOpen){ closeCloudMenu(); } else { popup.classList.add('open'); overlay.classList.add('open'); }
+}
+function closeCloudMenu(){
+  document.getElementById('cloudPopup').classList.remove('open');
+  document.getElementById('cloudOverlay').classList.remove('open');
+}
+
+// ── BACKUP / RESTORE ─────────────────────────────────────────
+function backupData(){
+  const payload={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    data:S
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  const ds=now.toISOString().split('T')[0];
+  a.href=url;
+  a.download=`MoneyTrack-Backup-${ds}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const ts=now.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  localStorage.setItem('mt3_lastbackup', ts);
+  localStorage.setItem('mt3_lastbackup_ts', Date.now().toString());
+  localStorage.removeItem(BANNER_DISMISS_KEY);
+  toast('✅ Backup saved! Store it in iCloud Drive.');
+  updateBackupUI();
+  if(activeTab===4) renderSettings();
+}
+
+function restoreData(ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const payload=JSON.parse(e.target.result);
+      const restored=payload.data||payload;
+      if(!Array.isArray(restored.parties)||!Array.isArray(restored.entries)){
+        alert('Invalid backup file. Please use a file exported from MoneyTrack.');
+        return;
+      }
+      if(!confirm(`Restore ${restored.parties.length} parties and ${restored.entries.length} entries?\n\nThis will REPLACE your current data.`))return;
+      S=restored;
+      saveData();
+      renderParties(); updateSub();
+      switchTab(0);
+      toast('✅ Data restored successfully!');
+    }catch(err){
+      alert('Could not read the file. Please select a valid MoneyTrack backup.');
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value='';
+}
+
+function clearAllData(){
+  if(!confirm('This will permanently delete ALL parties and entries. This cannot be undone.\n\nAre you sure?'))return;
+  if(!confirm('Final confirmation — delete everything?'))return;
+  S={parties:[],entries:[]};
+  saveData(); renderParties(); updateSub(); switchTab(0);
+  toast('All data cleared.');
+}
+
+// ── ENTRY SHEET ───────────────────────────────────────────────
+let selType_v='gave';
+function openAddEntry(preParty=null){
+  selType_v='gave';
+  ['gave','received','submitted','reimbursed'].forEach(t=>{
+    document.getElementById('topt-'+t).className='type-opt'+(t==='gave'?' ag':'');
+  });
+  document.getElementById('entryAmt').value='';
+  document.getElementById('entryNote').value='';
+  document.getElementById('entryRef').value='';
+  document.getElementById('entryDate').value=today();
+  document.getElementById('entryCurr').value='INR';
+  document.getElementById('refSection').style.display='none';
+  const sel=document.getElementById('entryParty');
+  sel.innerHTML=`<option value="">Select party…</option>`;
+  S.parties.forEach(p=>{ sel.innerHTML+=`<option value="${p.id}"${p.id===preParty?' selected':''}>${esc(p.name)}</option>`; });
+  sel.innerHTML+=`<option value="__new">+ Add new party…</option>`;
+  openSheet('sheetEntry');
+}
+
+function selType(t){
+  selType_v=t;
+  const cls={gave:'ag',received:'ar',submitted:'as',reimbursed:'ab'};
+  ['gave','received','submitted','reimbursed'].forEach(x=>{
+    document.getElementById('topt-'+x).className='type-opt'+(x===t?' '+cls[t]:'');
+  });
+  document.getElementById('refSection').style.display=(t==='submitted'||t==='reimbursed')?'':'none';
+}
+
+function saveEntry(){
+  const pid=document.getElementById('entryParty').value;
+  if(pid==='__new'){closeSheet('sheetEntry');openAddParty();return;}
+  if(!pid){alert('Please select a party.');return;}
+  const amt=parseFloat(document.getElementById('entryAmt').value);
+  if(!amt||amt<=0){alert('Please enter a valid amount.');return;}
+  const e={
+    id:uid(),pid,type:selType_v,amt,
+    curr:document.getElementById('entryCurr').value,
+    note:document.getElementById('entryNote').value.trim(),
+    date:document.getElementById('entryDate').value||today(),
+    ref:document.getElementById('entryRef').value.trim()
+  };
+  S.entries.push(e); saveData(); closeSheet('sheetEntry');
+  if(detailPid===pid)renderDetail(pid);
+  renderParties(); updateSub();
+  if(activeTab===1)renderAll();
+  if(activeTab===2)renderPending();
+  if(activeTab===3)renderReport();
+  toast('✅ Entry saved');
+}
+
+// ── PARTY SHEET ───────────────────────────────────────────────
+let selPType_v='Friend';
+function openAddParty(){
+  selPType_v='Friend';
+  ['Friend','Relative','Company','Colleague','Client','Other'].forEach(t=>{
+    document.getElementById('pc-'+t).classList.toggle('active',t==='Friend');
+  });
+  document.getElementById('partyName').value='';
+  document.getElementById('partyNote').value='';
+  openSheet('sheetParty');
+}
+function selPType(t){
+  selPType_v=t;
+  ['Friend','Relative','Company','Colleague','Client','Other'].forEach(x=>{
+    document.getElementById('pc-'+x).classList.toggle('active',x===t);
+  });
+}
+function saveParty(){
+  const name=document.getElementById('partyName').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  const p={id:uid(),name,type:selPType_v,note:document.getElementById('partyNote').value.trim()};
+  S.parties.push(p); saveData(); closeSheet('sheetParty');
+  renderParties(); updateSub();
+  openAddEntry(p.id);
+}
+
+// ── SHEET HELPERS ─────────────────────────────────────────────
+function openSheet(id){document.getElementById(id).classList.add('open');}
+function closeSheet(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.sheet-overlay').forEach(el=>{
+  el.addEventListener('click',function(ev){if(ev.target===el)closeSheet(el.id);});
+});
+
+// ── BACKUP REMINDER SYSTEM ────────────────────────────────────
+const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const BANNER_DISMISS_KEY = 'mt3_bannerdismissed';
+
+function getLastBackupMs(){
+  const raw = localStorage.getItem('mt3_lastbackup_ts');
+  return raw ? parseInt(raw) : null;
+}
+
+function timeSinceBackup(){
+  const last = getLastBackupMs();
+  if(!last) return null;
+  return Date.now() - last;
+}
+
+function isBackupOverdue(){
+  // No entries = no need to backup
+  if(S.entries.length === 0 && S.parties.length === 0) return false;
+  const last = getLastBackupMs();
+  if(!last) return true; // never backed up
+  return (Date.now() - last) > BACKUP_INTERVAL_MS;
+}
+
+function friendlyTimeSince(ms){
+  if(!ms) return 'Never';
+  const mins  = Math.floor(ms / 60000);
+  const hours = Math.floor(ms / 3600000);
+  const days  = Math.floor(ms / 86400000);
+  if(mins < 1)   return 'Just now';
+  if(mins < 60)  return `${mins} min ago`;
+  if(hours < 24) return `${hours} hr ago`;
+  return `${days} day${days>1?'s':''} ago`;
+}
+
+function updateBackupUI(){
+  const overdue = isBackupOverdue();
+  const elapsed = timeSinceBackup();
+
+  // Badge dot on ☁️ button
+  document.getElementById('cloudBadge').classList.toggle('show', overdue);
+
+  // Last backup text in popup
+  const popupEl = document.getElementById('popupLastBackup');
+  if(popupEl){
+    popupEl.textContent = elapsed
+      ? `Last backup: ${friendlyTimeSince(elapsed)}`
+      : 'Last backup: Never';
+    popupEl.style.color = overdue ? 'var(--red)' : 'var(--label4)';
+  }
+
+  // Banner — only show if overdue AND not dismissed in last 60 mins
+  const banner = document.getElementById('backupBanner');
+  const dismissed = parseInt(localStorage.getItem(BANNER_DISMISS_KEY)||'0');
+  const dismissedRecently = (Date.now() - dismissed) < 60 * 60 * 1000; // 1 hr
+
+  if(overdue && !dismissedRecently){
+    const sub = elapsed
+      ? `Last backup was ${friendlyTimeSince(elapsed)} — tap Save Now`
+      : 'You have never backed up your data';
+    document.getElementById('bannerSub').textContent = sub;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function dismissBanner(){
+  localStorage.setItem(BANNER_DISMISS_KEY, Date.now().toString());
+  document.getElementById('backupBanner').classList.remove('show');
+}
+
+// Override backupData to also record timestamp
+const _origBackup = typeof backupData === 'function' ? backupData : null;
+
+// ── INIT ──────────────────────────────────────────────────────
+loadData();
+document.getElementById('lockScreen').style.display='flex';
+document.getElementById('app').style.display='none';
+
+// Start reminder check every 60 seconds once unlocked
+function startReminderTimer(){
+  updateBackupUI();
+  setInterval(updateBackupUI, 60 * 1000);
+}
+</script>
+</body>
+</html>
