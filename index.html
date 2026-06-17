@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MoneyTrack">
 <meta name="theme-color" content="#f2f2f7" id="themeColor">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23007aff'/%3E%3Ctext x='90' y='125' font-size='100' text-anchor='middle' font-family='system-ui' fill='white'%3E₹%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-startup-image" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 430 932'%3E%3Crect width='430' height='932' fill='%23f2f2f7'/%3E%3C/svg%3E">
 <title>MoneyTrack Pro</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -54,20 +56,21 @@ body.dark{background:#000000;color:#ffffff;--bg:#000000;--card:#1c1c1e;--card2:#
 .sbtn{flex:1;padding:6px 2px;border:none;background:transparent;border-radius:7px;font-size:11px;font-weight:500;color:var(--label3);cursor:pointer;white-space:nowrap;font-family:-apple-system,sans-serif;}
 .sbtn.on{background:var(--card);color:var(--label);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.14);}
 
-/* CLOUD POPUP */
+/* CLOUD POPUP - higher z-index, pointer events fixed */
 .cwrap{position:relative;}
-.cpop{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.22);min-width:220px;z-index:400;overflow:hidden;border:0.5px solid var(--sep);}
+.cpop{display:none;position:absolute;top:calc(100% + 10px);right:-8px;background:var(--card);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.28);min-width:230px;z-index:600;overflow:hidden;border:0.5px solid var(--sep);}
 .cpop.on{display:block;animation:popIn 0.18s ease;}
 @keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(-5px);}to{opacity:1;transform:scale(1) translateY(0);}}
 .cpop-hd{font-size:11px;font-weight:600;color:var(--label4);text-transform:uppercase;letter-spacing:0.5px;padding:10px 14px 6px;}
-.cpop-row{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:-apple-system,sans-serif;}
+.cpop-row{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:-apple-system,sans-serif;-webkit-appearance:none;}
 .cpop-row:active{background:var(--inpbg);}
 .cpop-row+.cpop-row{border-top:0.5px solid var(--sep);}
 .cpop-ico{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
 .cpop-lbl{font-size:15px;font-weight:500;color:var(--label);}
 .cpop-sl{font-size:12px;color:var(--label3);margin-top:1px;}
 .cpop-ft{font-size:11px;color:var(--label4);padding:6px 14px 9px;border-top:0.5px solid var(--sep);text-align:center;}
-.coverlay{display:none;position:fixed;inset:0;z-index:199;}
+/* overlay behind popup but above content */
+.coverlay{display:none;position:fixed;inset:0;z-index:590;}
 .coverlay.on{display:block;}
 
 /* BANNER */
@@ -359,24 +362,31 @@ body.dark #toast{background:#3a3a3c;}
     <div class="nav-top">
       <div><div class="nav-title" id="navT">MoneyTrack</div><div class="nav-sub" id="navS">—</div></div>
       <div class="nav-right">
-        <button class="nbtn" onclick="doSearch()" title="Search">🔍</button>
+        <button class="nbtn" onclick="doSearch()" title="Search" style="color:var(--blue)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
         <button class="nbtn nbtn-add" id="addBtn" title="Add Entry">+</button>
         <div class="cwrap">
-          <button class="nbtn nbtn-cloud" onclick="toggleCloud(event)" title="Backup">☁️<span class="cbadge" id="cbadge"></span></button>
+          <button class="nbtn nbtn-cloud" id="cloudBtn" title="Backup">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+            <span class="cbadge" id="cbadge"></span>
+          </button>
           <div class="cpop" id="cpop">
             <div class="cpop-hd">iCloud Backup</div>
-            <button class="cpop-row" onclick="doExport();closeCloud()">
+            <button class="cpop-row" id="exportBtn">
               <span class="cpop-ico">⬆️</span>
               <div><div class="cpop-lbl">Export Backup</div><div class="cpop-sl">Save JSON to iCloud Drive</div></div>
             </button>
-            <button class="cpop-row" onclick="closeCloud();triggerImport()">
+            <button class="cpop-row" id="importBtn">
               <span class="cpop-ico">⬇️</span>
               <div><div class="cpop-lbl">Import Backup</div><div class="cpop-sl">Restore from saved file</div></div>
             </button>
             <div class="cpop-ft" id="cpopFt">Last backup: Never</div>
           </div>
         </div>
-        <button class="nbtn" onclick="lockApp()" title="Lock">🔒</button>
+        <button class="nbtn" onclick="lockApp()" title="Lock" style="color:var(--label3)">
+          <svg width="16" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
       </div>
     </div>
     <div class="seg" id="seg">
@@ -385,7 +395,10 @@ body.dark #toast{background:#3a3a3c;}
       <button class="sbtn" onclick="goTab(2)">Pending</button>
       <button class="sbtn" onclick="goTab(3)">Trips</button>
       <button class="sbtn" onclick="goTab(4)">Split</button>
-      <button class="sbtn" onclick="goTab(5)">⚙️</button>
+      <button class="sbtn" onclick="goTab(5)" style="display:flex;align-items:center;justify-content:center;gap:2px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
     </div>
   </div>
   <div id="bkBanner">
@@ -794,7 +807,13 @@ function doSearch(){
   document.getElementById('v9').classList.add('on');
   buildSearch('');
   document.getElementById('scrollArea').scrollTop=0;
-  setTimeout(()=>{const si=document.getElementById('srchInp');if(si)si.focus();},300);
+  // Focus after render and small delay so iOS keyboard triggers properly
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      const si=document.getElementById('srchInp');
+      if(si){si.focus();si.click();}
+    });
+  });
 }
 function goBack(){
   dPid=null;dTid=null;
@@ -1108,7 +1127,7 @@ function buildReport(){
 
 // ═══════════════ SEARCH ═══════════════
 function buildSearch(q){
-  let h='<div class="srch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--label4)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="srchInp" placeholder="Search parties, entries, trips, reminders…" value="'+esc(q)+'" oninput="buildSearch(this.value)"></div>';
+  let h='<div class="srch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--label4)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="search" id="srchInp" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search parties, entries, trips, reminders…" value="'+esc(q)+'" oninput="buildSearch(this.value)"></div>';
   if(!q.trim()){
     h+='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">Search everything</div><div class="empty-s">Find parties, entries, trips, and reminders in one place.</div></div>';
     document.getElementById('v9').innerHTML=h;return;
@@ -1577,12 +1596,21 @@ function dismissBanner(){localStorage.setItem(BDIS,Date.now().toString());docume
 function startBKTimer(){updateBKUI();setInterval(updateBKUI,60000);}
 
 // ═══════════════ CLOUD MENU ═══════════════
-function toggleCloud(ev){
-  if(ev)ev.stopPropagation();
+// Wire buttons via JS to avoid inline onclick issues in Safari
+document.getElementById('cloudBtn').addEventListener('click',function(ev){
+  ev.stopPropagation();
   const p=document.getElementById('cpop'),o=document.getElementById('cOverlay');
   if(p.classList.contains('on')){closeCloud();}
   else{updateBKUI();p.classList.add('on');o.classList.add('on');}
-}
+});
+document.getElementById('exportBtn').addEventListener('click',function(){
+  closeCloud();
+  setTimeout(doExport,50);
+});
+document.getElementById('importBtn').addEventListener('click',function(){
+  closeCloud();
+  setTimeout(triggerImport,50);
+});
 function closeCloud(){
   document.getElementById('cpop').classList.remove('on');
   document.getElementById('cOverlay').classList.remove('on');
@@ -1606,6 +1634,31 @@ loadD();
 updateLockSum();
 document.getElementById('lockScreen').style.display='flex';
 document.getElementById('app').style.display='none';
+
+// Generate apple-touch-icon dynamically for home screen
+(function(){
+  try{
+    const c=document.createElement('canvas');
+    c.width=180;c.height=180;
+    const ctx=c.getContext('2d');
+    // rounded rect background
+    const r=40;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.arcTo(180,0,180,r,r);
+    ctx.lineTo(180,180-r);ctx.arcTo(180,180,180-r,180,r);
+    ctx.lineTo(r,180);ctx.arcTo(0,180,0,180-r,r);
+    ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();
+    ctx.fillStyle='#007aff';ctx.fill();
+    // ₹ symbol
+    ctx.fillStyle='white';ctx.font='bold 90px -apple-system,Arial,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('₹',90,98);
+    // Set as apple touch icon
+    const existing=document.querySelector('link[rel="apple-touch-icon"]');
+    if(existing)existing.href=c.toDataURL('image/png');
+    else{const l=document.createElement('link');l.rel='apple-touch-icon';l.href=c.toDataURL('image/png');document.head.appendChild(l);}
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
